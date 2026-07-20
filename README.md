@@ -2,7 +2,7 @@
 
 **A free tool that finds small businesses with no website — anywhere on Earth — so you can build them one and sell it.**
 
-## 🔗 Live: [**alex-ai-xorvion.vercel.app**](https://alex-ai-xorvion.vercel.app)
+[![Live App](https://img.shields.io/badge/●_LIVE-OPEN_APP-0D1117?style=for-the-badge&labelColor=166534)](https://alex-ai-xorvion.vercel.app)
 
 Alex.ai sweeps Google Maps, OpenStreetMap *and* TomTom for shops, restaurants, salons, garages… that have **zero web presence**, deep-analyzes each one with AI, and hands you everything you need to close them: a lead score, a website plan, and ready-to-send outreach in their own language. Total running cost: **$0/month**. (Single-operator tool — the live app is password-protected.)
 
@@ -77,11 +77,11 @@ npm run dev            # → http://localhost:3000
 
 ## 👋 About the creator
 
-Hi, I'm **Sumit Kumar** — an AI/ML Engineer based in Noida, India. I design, build, and ship production-grade AI products end-to-end, and I built Alex.ai across every layer: the multi-source discovery engine, the quota-guarded free-tier architecture, the AI analysis pipeline, and the Next.js interface.
+Hi, I'm **Sumit Kumar** — an AI/ML Engineer. I design, build, and ship production-grade AI products end-to-end, and I built Alex.ai across every layer: the multi-source discovery engine, the quota-guarded free-tier architecture, the AI analysis pipeline, and the Next.js interface.
 
 I'm always open to connecting with recruiters, founders, and fellow builders — if you like what you see here, let's talk.
 
 - 🌐 Portfolio: [sumitkr28.vercel.app](https://sumitkr28.vercel.app)
 - 💼 LinkedIn: [linkedin.com/in/sumit-kumar2812](https://linkedin.com/in/sumit-kumar2812)
 - 🐙 GitHub: [github.com/Sumitkr28](https://github.com/Sumitkr28)
-- 🚀 AI Studio: **Xorvion**
+- 🚀 AI Studio: [**Xorvion**](https://xorvion-ai.vercel.app/)
