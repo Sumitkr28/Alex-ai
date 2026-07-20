@@ -84,4 +84,12 @@ I'm always open to connecting with recruiters, founders, and fellow builders —
 - 🌐 Portfolio: [sumitkr28.vercel.app](https://sumitkr28.vercel.app)
 - 💼 LinkedIn: [linkedin.com/in/sumit-kumar2812](https://linkedin.com/in/sumit-kumar2812)
 - 🐙 GitHub: [github.com/Sumitkr28](https://github.com/Sumitkr28)
-- 🚀 AI Studio: [**Xorvion**](https://xorvion-ai.vercel.app/)
+
+## 🏢 About Xorvion
+
+**Xorvion** is an independent AI studio created by **Sumit Kumar**. Xorvion designs, builds, and ships AI products end-to-end — from multi-agent orchestration and free-tier-first architecture to auth, persistence, and the design system. Alex.ai is one of its flagship builds.
+
+- 🌐 Website: [xorvion-ai.vercel.app](https://xorvion-ai.vercel.app)
+- 🔗 LinkedIn: [linkedin.com/company/xorvion](https://linkedin.com/company/xorvion)
+- 🐙 GitHub: [github.com/xorvion-ai](https://github.com/xorvion-ai)
+- 📨 Email: [xorvion.ai@gmail.com](mailto:xorvion.ai@gmail.com)
