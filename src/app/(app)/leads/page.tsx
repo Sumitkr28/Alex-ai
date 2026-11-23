@@ -63,17 +63,24 @@ function briefSocials(socials: string[] | null): string[] {
   return Object.entries(best).map(([k, v]) => `${k}: ${v}`);
 }
 
-function buildParams(f: {
+type Filters = {
   search: string;
   country: string;
   city: string;
   cats: string[];
-  source: string;
+  source: "all" | "google" | "osm" | "tomtom";
   ws: { none: boolean; social_only: boolean };
   minScore: number;
   verified: boolean;
   igOnly: boolean;
-}): string {
+};
+
+// Where you were: the applied filters and the open lead. A phone browser often
+// reloads the tab after a trip to WhatsApp — this puts you back on it.
+const VIEW_KEY = "alex_leads_view";
+type SavedView = { f: Partial<Filters>; selId: number | null; idx: number };
+
+function buildParams(f: Filters): string {
   const p = new URLSearchParams();
   if (f.search) p.set("search", f.search);
   if (countryName(f.country)) p.set("country", f.country);
@@ -88,7 +95,8 @@ function buildParams(f: {
   return p.toString();
 }
 
-function LeadsInner() {
+function LeadsInner({ saved }: { saved: SavedView | null }) {
+  const sf = saved?.f ?? {};
   const searchParams = useSearchParams();
   const { flash, node: toastNode } = useToast();
 
@@ -101,15 +109,15 @@ function LeadsInner() {
   const [copied, setCopied] = useState("");
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [country, setCountry] = useState(ANY_COUNTRY);
-  const [cityF, setCityF] = useState("");
-  const [cats, setCats] = useState<string[]>(["any"]);
-  const [source, setSource] = useState<"all" | "google" | "osm" | "tomtom">("all");
-  const [ws, setWs] = useState({ none: true, social_only: true });
-  const [minScore, setMinScore] = useState(0);
-  const [verified, setVerified] = useState(false);
-  const [igOnly, setIgOnly] = useState(false);
+  const [search, setSearch] = useState(sf.search ?? "");
+  const [country, setCountry] = useState(sf.country ?? ANY_COUNTRY);
+  const [cityF, setCityF] = useState(sf.city ?? "");
+  const [cats, setCats] = useState<string[]>(sf.cats ?? ["any"]);
+  const [source, setSource] = useState<Filters["source"]>(sf.source ?? "all");
+  const [ws, setWs] = useState(sf.ws ?? { none: true, social_only: true });
+  const [minScore, setMinScore] = useState(sf.minScore ?? 0);
+  const [verified, setVerified] = useState(sf.verified ?? false);
+  const [igOnly, setIgOnly] = useState(sf.igOnly ?? false);
   const [moreCats, setMoreCats] = useState(false);
   // FX: one fetch per page load (server caches for 12h), used by the CURRENCY card.
   const [inrPer, setInrPer] = useState<Record<string, number>>({});
@@ -126,7 +134,9 @@ function LeadsInner() {
   const [msgSaving, setMsgSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
 
-  const filterState = { search, country, city: cityF, cats, source, ws, minScore, verified, igOnly };
+  const filterState: Filters = { search, country, city: cityF, cats, source, ws, minScore, verified, igOnly };
+  // The filters behind the rows on screen — not the half-edited filter panel.
+  const applied = useRef(filterState);
 
   // On phones the list and detail take turns, so auto-selecting the first lead
   // would drop the user straight into a detail view. 820px = the CSS breakpoint.
@@ -134,6 +144,7 @@ function LeadsInner() {
 
   const loadRows = useCallback(
     async (selectFirst = false, preferId: number | null = null) => {
+      applied.current = filterState;
       const qs = buildParams(filterState);
       const r = await api<{ leads: LeadDto[] }>(`/api/leads${qs ? `?${qs}` : ""}`);
       setRows(r.leads);
@@ -144,6 +155,7 @@ function LeadsInner() {
       } else if (selectFirst || (selId != null && !r.leads.some((l) => l.id === selId))) {
         setSelId(r.leads[0]?.id ?? null);
       }
+      return r.leads;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [search, country, cityF, cats, source, ws, minScore, verified, igOnly, selId],
@@ -181,8 +193,21 @@ function LeadsInner() {
 
   useEffect(() => {
     const want = Number(searchParams.get("sel")) || null;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadRows(autoSelect(), want);
+    // A deep link opens once; drop it from the URL so a reload doesn't
+    // replay it over wherever you have moved to since.
+    if (want) window.history.replaceState(null, "", window.location.pathname);
+    const back = saved?.selId;
+    if (want || back == null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadRows(autoSelect(), want);
+      return;
+    }
+    // Reopen the lead you were on — or, if it has left the list (contacted,
+    // deleted), the one that took its place: the next one down.
+    loadRows().then((leads) => {
+      const i = Math.min(Math.max(saved!.idx, 0), leads.length - 1);
+      setSelId((leads.find((l) => l.id === back) ?? leads[i])?.id ?? null);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -305,6 +330,13 @@ function LeadsInner() {
     const next = rows[rowIndex + delta];
     if (next) setSelId(next.id);
   };
+
+  useEffect(() => {
+    const view: SavedView = { f: applied.current, selId, idx: rowIndex };
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify(view));
+    } catch {}
+  }, [rows, selId, rowIndex]);
 
   const waHref = (text: string) =>
     L && (L.phoneIntl || L.phone)
@@ -1476,9 +1508,21 @@ This removes the lead from the app for good.`)) return;
 }
 
 export default function LeadsPage() {
+  // localStorage exists only in the browser, so read it after mount and only
+  // then render — the filters start from it instead of loading twice.
+  const [saved, setSaved] = useState<SavedView | null | undefined>(undefined);
+  useEffect(() => {
+    let v: SavedView | null = null;
+    try {
+      v = JSON.parse(localStorage.getItem(VIEW_KEY) ?? "null");
+    } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSaved(v);
+  }, []);
+  if (saved === undefined) return <div style={{ flex: 1 }} />;
   return (
     <Suspense fallback={<div style={{ flex: 1 }} />}>
-      <LeadsInner />
+      <LeadsInner saved={saved} />
     </Suspense>
   );
 }
